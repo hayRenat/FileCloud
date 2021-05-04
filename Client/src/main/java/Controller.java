@@ -1,16 +1,18 @@
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.ProgressIndicator;
@@ -18,11 +20,15 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-public class Controller {
+import java.net.URL;
+import java.util.ResourceBundle;
+
+public class Controller implements Initializable {
 
     private ChannelFuture channelFuture;
     private static Channel channel;
     private BooleanProperty connected = new SimpleBooleanProperty(false);
+    private static Boolean authorized;
 
     @FXML
     TextField loginField;
@@ -37,7 +43,11 @@ public class Controller {
     @FXML
     Label lblStatus;
 
-
+    @Override
+    public void initialize(URL url, ResourceBundle resourceBundle) {
+        authorized = false;
+        start();
+    }
 
 
     public void start() {
@@ -57,7 +67,10 @@ public class Controller {
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
-                                ch.pipeline().addLast(new StringEncoder(), new StringDecoder());
+                                ch.pipeline().addLast(
+                                        new StringEncoder(),
+                                        new StringDecoder(),
+                                        new ClientHandler());
                             }
                         });
                 //временное сообщение для меня
@@ -75,9 +88,9 @@ public class Controller {
             }
 
             @Override
-            protected void succeeded(){
+            protected void succeeded() {
                 //временное сообщение для меня
-                System.out.println("succeeded сработал");
+                System.out.println("succeeded в старте сработал");
 
                 channel = getValue();
                 connected.set(true);
@@ -90,15 +103,15 @@ public class Controller {
                 System.out.println("failed сработал");
             }
         };
-        lblStatus.textProperty().bind( task.messageProperty() );
+        lblStatus.textProperty().bind(task.messageProperty());
         piStatus.progressProperty().bind(task.progressProperty());
         new Thread(task).start();
     }
 
     public void sendAuth() {
         // нажатие кнопки для авторизации
-        System.out.println("sendAuth");
-        start();
+        System.out.println("пошла sendAuth");//временно
+//        start();
         if (!connected.get())
             return;
 
@@ -106,19 +119,38 @@ public class Controller {
             @Override
             protected Void call() throws Exception {
                 System.out.println("посылаю данные о " + loginField.getText() + " " + passField.getText());
-                ChannelFuture f = channel.writeAndFlush("/auth " + loginField.getText() + " " + passField.getText() + " " + "\n").sync();
+                ChannelFuture f = channel.writeAndFlush("/auth " + loginField.getText() + " " + passField.getText() + "\n").sync();
                 return null;
             }
+            @Override // временная попытка
+            protected void succeeded(){
+                System.out.println("Succeeded в аутентификации");
+            }
 
-
-        @Override
-        protected void failed() {
-            connected.set(false);
-            System.out.println("failed сработал");
-        }
+            @Override
+            protected void failed() {
+                connected.set(false);
+                System.out.println("failed сработал");
+            }
         };
-        lblStatus.textProperty().bind( task.messageProperty() );
+        lblStatus.textProperty().bind(task.messageProperty());
         piStatus.progressProperty().bind(task.progressProperty());
         new Thread(task).start();
+        //здесь мне нужна какая то пауза пока authorized не будет true
+//        while ()
+        setWorkDesktop();
+    }
+
+    public static void setAuthorized() {
+        authorized = true;
+        System.out.println("Авторизация - " + authorized.toString());
+
+    }
+
+    void setWorkDesktop() {
+        if (authorized) {
+            authPanel.setVisible(false);
+            authPanel.setManaged(false);
+        } else System.out.println("Не удалось поменять рабочий стол");
     }
 }
