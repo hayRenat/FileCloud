@@ -1,12 +1,13 @@
 
+
+//основа для хендлера сервера для закачки файлов на сервер
+
+
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
-
 import java.io.File;
 import java.io.RandomAccessFile;
-
-//основа для хендлера сервера для закачки файлов на сервер
 
 public class FileUploadServerHandler extends ChannelInboundHandlerAdapter {
 	private int byteRead;

@@ -1,59 +1,50 @@
 import java.sql.*;
-//на данный момент SQL почему то не поднимается, хотел его воткнуть временно для прохождения этапа регистрации. буду работать на H2DB
 
 public class SQLHandler {
-    private static Connection connection;
-    private static Statement statement;
+    static final String JDBC_DRIVER = "org.h2.Driver";
+    static final String DB_URL = "jdbc:h2:C:\\Java Project\\FileCloud\\DB";
+    static final String USER = "admin";
+    static final String PASS = "admin";
+    static Connection conn = null;
+    static Statement stmt = null;
 
     public static void connect() {
         try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:database.db");
-            statement = connection.createStatement();
-        } catch (Exception e) {
+            Class.forName(JDBC_DRIVER); //Регистрация драйвера базы данных JDBC
+            System.out.println("Соединение с БД");//временно для отслеживания
+            conn = DriverManager.getConnection(DB_URL, USER, PASS);
+        } catch (SQLException | ClassNotFoundException e) {
+            System.out.println("Не удалось подключиться к БД");//временно
             e.printStackTrace();
         }
     }
 
     public static void disconnect() {
         try {
-            connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
+            stmt.close();
+            conn.close();
+        } catch (SQLException throwables) {
+            System.out.println("Не удалось закрыть подключение к БД");//временно
+            throwables.printStackTrace();
         }
     }
 
-    public static String getNickByLoginAndPassword(String login, String password) {
+    public static String sendAuth(String name, String password) {
+        String result = null;
         try {
-            ResultSet rs = statement.executeQuery("SELECT nickname FROM users WHERE login ='" + login + "' AND password = '" + password + "'");
+            stmt = conn.createStatement();
+            String sqlpass = "SELECT * FROM USER WHERE PASSWORD = '" + password + "'";
+            System.out.println("Идёт к БД");//временно
+            ResultSet rs = stmt.executeQuery(sqlpass);
+            System.out.println("ПРИШЛО С БД");//временно
             if (rs.next()) {
-                return rs.getString("nickname");
+                result = rs.getString("PASSWORD");
+                System.out.println("Вытащил данные из БД - " + result);//временно
+                return result;
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
         }
         return null;
-    }
-
-    public static boolean tryToRegister(String login, String password, String nickname) {
-        try {
-            statement.executeUpdate("INSERT INTO users (login, password, nickname) VALUES ('" + login + "','" + password + "','" + nickname + "')");
-            return true;
-        } catch (SQLException e) {
-            return false;
-        }
-    }
-
-    public static boolean tryToChangeNick(String newNick, String oldNick) {
-        try {
-            ResultSet rs = statement.executeQuery("SELECT nickname FROM users WHERE nickname = '" + oldNick + "'");
-                if (rs.next()) {
-            statement.executeUpdate("UPDATE users SET nickname = '" + newNick + "' WHERE nickname = '" + oldNick + "'");
-            return true;
-                }
-        } catch (SQLException e) {
-            return false;
-        }
-        return false;
     }
 }
