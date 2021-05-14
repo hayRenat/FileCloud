@@ -1,3 +1,5 @@
+package server;
+
 import java.sql.*;
 
 public class SQLHandler {
@@ -10,10 +12,10 @@ public class SQLHandler {
 
     public static void connect() {
         try {
-            Class.forName(JDBC_DRIVER); //Регистрация драйвера базы данных JDBC
+//            Class.forName(JDBC_DRIVER); //Регистрация драйвера базы данных JDBC
             System.out.println("Соединение с БД");//временно для отслеживания
             conn = DriverManager.getConnection(DB_URL, USER, PASS);
-        } catch (SQLException | ClassNotFoundException e) {
+        } catch (SQLException e) {
             System.out.println("Не удалось подключиться к БД");//временно
             e.printStackTrace();
         }
@@ -33,12 +35,12 @@ public class SQLHandler {
         String result = null;
         try {
             stmt = conn.createStatement();
-            String sqlpass = "SELECT * FROM USER WHERE PASSWORD = '" + password + "'";
+            String sqlpass = "SELECT * FROM USER WHERE USERNAME ='" + name + "' AND PASSWORD = '" + password + "'";
             System.out.println("Идёт к БД");//временно
             ResultSet rs = stmt.executeQuery(sqlpass);
             System.out.println("ПРИШЛО С БД");//временно
             if (rs.next()) {
-                result = rs.getString("PASSWORD");
+                result = rs.getString("USERNAME");
                 System.out.println("Вытащил данные из БД - " + result);//временно
                 return result;
             }

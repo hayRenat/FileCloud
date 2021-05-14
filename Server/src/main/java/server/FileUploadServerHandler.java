@@ -1,8 +1,8 @@
-
-
+package server;
 //основа для хендлера сервера для закачки файлов на сервер
 
 
+import commons.FileUploadFile;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 

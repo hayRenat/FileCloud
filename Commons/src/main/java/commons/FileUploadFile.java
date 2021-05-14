@@ -1,9 +1,10 @@
+package commons;
+
 import java.io.File;
-import java.io.Serializable;
 
 //класс для передачи закачки файла в хендлере
 
-public class FileUploadFile implements Serializable {
+public class FileUploadFile extends Message{
 
     private static final long serialVersionUID = 1L;
     private File file;// Файл

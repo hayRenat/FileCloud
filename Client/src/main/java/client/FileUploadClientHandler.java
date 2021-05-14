@@ -1,6 +1,8 @@
+package client;
+
+import commons.FileUploadFile;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -22,7 +24,6 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
                 return;
             }
         }
-        this.fileUploadFile = ef;
     }
 
     @Override
@@ -41,7 +42,7 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
             if ((byteRead = randomAccessFile.read(bytes)) != -1) {
                 fileUploadFile.setEndPos(byteRead);
                 fileUploadFile.setBytes(bytes);
-                ctx.writeAndFlush(fileUploadFile); // отправкао сообщения на сервер, содержание сообщения, объект FileUploadFile содержит: файл, имя файла, начальную позицию, массив байтов файла, конечную позицию
+                ctx.writeAndFlush(fileUploadFile); // отправкао сообщения на сервер, содержание сообщения, объект java.commons.FileUploadFile содержит: файл, имя файла, начальную позицию, массив байтов файла, конечную позицию
             } else {
             }
 

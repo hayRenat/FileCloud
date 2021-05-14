@@ -5,12 +5,26 @@
 <?import javafx.scene.layout.*?>
 
 <VBox fx:id="mainBox" alignment="center" xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="Controller">
-    <HBox fx:id="authPanel">
+    <HBox fx:id="authPanel" visible="true">
         <TextField fx:id="loginField" HBox.hgrow="ALWAYS" />
         <PasswordField fx:id="passField" HBox.hgrow="ALWAYS" />
         <Button onAction="#sendAuth" text="Авторизоваться" HBox.hgrow="ALWAYS" />
     </HBox>
+    <HBox fx:id="workedplace" visible="false">
+        <ComboBox fx:id="disksBox" />
+        <TextField fx:id="pathField" editable="false" HBox.hgrow="ALWAYS"/>
+        <Button text="Вверх" />
+    </HBox>
+    <TableView fx:id="filesTable" VBox.vgrow="ALWAYS" visible="false"/>
     <Separator prefWidth="200.0" />
+    <HBox spacing="3">
+        <Button maxWidth="Infinity" focusTraversable="false" text="Синхронизировать" HBox.hgrow="ALWAYS" onAction="#syncronizedClientFromServer"/>
+        <Button maxWidth="Infinity" focusTraversable="false" text="Копировать с сервера" HBox.hgrow="ALWAYS"/>
+        <Button maxWidth="Infinity" focusTraversable="false" text="Копировать на сервер" HBox.hgrow="ALWAYS"/>
+        <padding>
+            <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+        </padding>
+    </HBox>
     <VBox VBox.vgrow="NEVER">
         <VBox.margin>
             <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
