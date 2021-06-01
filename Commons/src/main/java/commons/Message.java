@@ -11,8 +11,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         value = {
                 @JsonSubTypes.Type(value = AuthMessage.class, name = "AuthMessage"),
                 @JsonSubTypes.Type(value = FileInfo.class, name = "FileInfo"),
-                @JsonSubTypes.Type(value = FileUploadFile.class, name = "FileUploadFile"),
-                @JsonSubTypes.Type(value = SyncronizedClientFromServer.class, name = "SyncronizedClientFromServer")
+                @JsonSubTypes.Type(value = FileMessage.class, name = "FileUploadFile"),
+                @JsonSubTypes.Type(value = SyncronizedClientFromServer.class, name = "SyncronizedClientFromServer"),
+                @JsonSubTypes.Type(value = DownloadFileMessage.class, name = "DownloadFileMessage")
         }
 )
 

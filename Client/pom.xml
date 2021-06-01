@@ -10,17 +10,39 @@
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-controls -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>17-ea+11</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-graphics -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
-            <version>11.0.1</version>
+            <version>17-ea+11</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-base -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-base</artifactId>
+            <version>16</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-fxml -->
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
-            <version>11.0.1</version>
+            <version>17-ea+11</version>
         </dependency>
+
+
     </dependencies>
+    <repositories>
+        <repository>
+            <id>ICM</id>
+            <url>http://maven.icm.edu.pl/artifactory/repo/</url>
+        </repository>
+    </repositories>
 
     <parent>
         <groupId>hayRenat</groupId>

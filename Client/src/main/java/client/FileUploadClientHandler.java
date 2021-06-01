@@ -1,6 +1,6 @@
 package client;
 
-import commons.FileUploadFile;
+import commons.FileMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -15,9 +15,9 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
     private volatile int start = 0;
     private volatile int lastLength = 0;
     public RandomAccessFile randomAccessFile;
-    private FileUploadFile fileUploadFile;
+    private FileMessage fileMessage;
 
-    public FileUploadClientHandler(FileUploadFile ef) {
+    public FileUploadClientHandler(FileMessage ef) {
         if (ef.getFile().exists()) {
             if (!ef.getFile().isFile()) {
                 System.out.println("Not a file :" + ef.getFile());
@@ -33,16 +33,16 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
 
     public void channelActive(ChannelHandlerContext ctx) {
         try {
-            randomAccessFile = new RandomAccessFile(fileUploadFile.getFile(),
+            randomAccessFile = new RandomAccessFile(fileMessage.getFile(),
                     "r");
-            randomAccessFile.seek(fileUploadFile.getStarPos());
+            randomAccessFile.seek(fileMessage.getStarPos());
             // lastLength = (int) randomAccessFile.length() / 10;
             lastLength = 1024 * 10;
             byte[] bytes = new byte[lastLength];
             if ((byteRead = randomAccessFile.read(bytes)) != -1) {
-                fileUploadFile.setEndPos(byteRead);
-                fileUploadFile.setBytes(bytes);
-                ctx.writeAndFlush(fileUploadFile); // отправкао сообщения на сервер, содержание сообщения, объект java.commons.FileUploadFile содержит: файл, имя файла, начальную позицию, массив байтов файла, конечную позицию
+                fileMessage.setEndPos(byteRead);
+                fileMessage.setBytes(bytes);
+                ctx.writeAndFlush(fileMessage); // отправкао сообщения на сервер, содержание сообщения, объект java.commons.FileUploadFile содержит: файл, имя файла, начальную позицию, массив байтов файла, конечную позицию
             } else {
             }
 
@@ -59,7 +59,7 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
         if (msg instanceof Integer) {
             start = (Integer) msg;
             if (start != -1) {
-                randomAccessFile = new RandomAccessFile(fileUploadFile.getFile(), "r");
+                randomAccessFile = new RandomAccessFile(fileMessage.getFile(), "r");
                 randomAccessFile.seek(start);
                 int a = (int) (randomAccessFile.length() - start);
                 int b = (int) (randomAccessFile.length() / 1024 * 2);
@@ -68,10 +68,10 @@ public class FileUploadClientHandler extends ChannelInboundHandlerAdapter {
                 }
                 byte[] bytes = new byte[lastLength];
                 if ((byteRead = randomAccessFile.read(bytes)) != -1 && (randomAccessFile.length() - start) > 0) {
-                    fileUploadFile.setEndPos(byteRead);
-                    fileUploadFile.setBytes(bytes);
+                    fileMessage.setEndPos(byteRead);
+                    fileMessage.setBytes(bytes);
                     try {
-                        ctx.writeAndFlush(fileUploadFile);
+                        ctx.writeAndFlush(fileMessage);
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

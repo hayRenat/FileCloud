@@ -2,7 +2,7 @@ package server;
 //основа для хендлера сервера для закачки файлов на сервер
 
 
-import commons.FileUploadFile;
+import commons.FileMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -30,11 +30,11 @@ public class FileUploadServerHandler extends ChannelInboundHandlerAdapter {
     
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (msg instanceof FileUploadFile) {
-            FileUploadFile ef = (FileUploadFile) msg;
+        if (msg instanceof FileMessage) {
+            FileMessage ef = (FileMessage) msg;
             byte[] bytes = ef.getBytes();
-            byteRead = ef.getEndPos();
-            String md5 = ef.getFile_md5();//文件名
+//            byteRead = ef.getEndPos();
+            String md5 = ef.getFileName();//文件名
             String path = file_dir + File.separator + md5;
             File file = new File(path);
             RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");//r: 只读模式 rw:读写模式

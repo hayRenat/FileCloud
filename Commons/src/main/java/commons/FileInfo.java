@@ -3,8 +3,6 @@ package commons;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 
 public class FileInfo extends Message {
     public enum FileType {
@@ -24,7 +22,8 @@ public class FileInfo extends Message {
     private String filename;
     private FileType type;
     private long size;
-    private LocalDateTime lastModified;
+    private long lastModified;
+    //все изменения Дат в программе связаны с ошибкой энкодера - com.fasterxml.jackson.databind.exc.InvalidDefinitionException: Java 8 тип даты/времени `java.time.LocalDateTime` не поддерживается по умолчанию: добавьте модуль "com.fasterxml.jackson.datatype:jackson-datatype-jsr310", Добавление модуля ситуацию не меняет
     private String pathFile;
 
     public String getPathFile() {
@@ -55,11 +54,11 @@ public class FileInfo extends Message {
         this.size = size;
     }
 
-    public LocalDateTime getLastModified() {
+    public long getLastModified() {
         return lastModified;
     }
 
-    public void setLastModified(LocalDateTime lastModified) {
+    public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
 
@@ -71,13 +70,20 @@ public class FileInfo extends Message {
             if (this.type == FileType.DIRECTORY) {
                 this.size = -1L;
             }
-            this.lastModified = LocalDateTime.ofInstant(Files.getLastModifiedTime(path).toInstant(), ZoneOffset.ofHours(3));
+            this.lastModified = Files.getLastModifiedTime(path).toMillis();
             this.pathFile = path.toFile().getPath();
         } catch (IOException e) {
-            throw new RuntimeException("Не смог создать java.commons.FileInfo по пути к файлу");
+            throw new RuntimeException("Не смог создать FileInfo по пути к файлу");
         }
     }
 
     public FileInfo() {
+    }
+
+    public FileInfo(String filename, long size, long lastModified, String pathFile) {
+        this.filename = filename;
+        this.size = size;
+        this.lastModified = lastModified;
+        this.pathFile = pathFile;
     }
 }
