@@ -3,6 +3,10 @@ package commons;
 import java.util.List;
 
 public class SyncronizedClientFromServer extends Message {
+
+    public SyncronizedClientFromServer() {
+    }
+
     private List<FileInfo> fileInfoList;
 
     public List<FileInfo> getFileInfoList() {
@@ -13,7 +17,4 @@ public class SyncronizedClientFromServer extends Message {
         this.fileInfoList = fileInfoList;
     }
 
-    public SyncronizedClientFromServer() {
-        this.fileInfoList = null;
-    }
 }

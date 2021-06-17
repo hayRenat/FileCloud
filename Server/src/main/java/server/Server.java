@@ -41,17 +41,9 @@ public class Server {
                                     new LengthFieldPrepender(4),
                                     new ByteArrayDecoder(),
                                     new ByteArrayEncoder(),
-//                                    new LogHandler(),
                                     new JsonDecoder(),
                                     new JsonEncoder(),
-//                                    new LogHandler(),
-//                                    new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null)), // Декодировщик с максимальной размером обьекта
-//                                    new ObjectEncoder(), //Кодировщик, который сериализует объект Java в файл ByteBuf.
-//                                    new LineBasedFrameDecoder(256),
-//                                    new StringDecoder(),
-//                                    new StringEncoder(),
                                     new ServerAuthorization() // хендлер авторизации
-//                                    new ServerHandler()
                             );}
                     });
             ChannelFuture future = serverBootstrap.bind(port).sync();

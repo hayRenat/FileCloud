@@ -15,8 +15,6 @@ public class Main extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(getClass().getResource("/sample.fxml"));
-//        Parent root = FXMLLoader.load(getClass().getResource("/sample.fxml")); - так было
-//        Controller controller = new Controller("loginField", "mainBox", "authPanel", "workedplace", "passField", "piStatus", "lblStatus");
         Parent root = loader.load();
         // выгрузил свой экземляр контроллера из FXMLLoader для обращения к его методам
         controller = loader.getController();

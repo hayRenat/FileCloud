@@ -29,9 +29,4 @@ public class AuthMessage extends Message {
         return password;
     }
 
-    public AuthMessage(String login, String password, Boolean autorized) {
-        this.login = login;
-        this.password = password;
-        this.autorized = autorized;
-    }
 }

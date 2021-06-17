@@ -18,12 +18,9 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 
 import java.io.IOException;
@@ -42,12 +39,11 @@ public class Controller implements Initializable {
 
     private final static int BUFFER_SIZE = 1024 * 512;
     private Channel channel;
-    private BooleanProperty connected = new SimpleBooleanProperty(false);
+    private final BooleanProperty connected = new SimpleBooleanProperty(false);
     private Boolean authorized;
     private List<FileInfo> fileList;
     private String login;
-//    private RandomAccessFile randomAccessFile;
-    private String defaultPath = "C:\\Cloud\\Client\\";
+    private final String defaultPath = "C:\\Cloud\\Client\\";
 
     public String getDefaultPath() {
         return defaultPath;
@@ -75,13 +71,10 @@ public class Controller implements Initializable {
     public void initialize(URL url, ResourceBundle resourceBundle) {
         authorized = false;
         start();
-//        while (!authorized){
-//            authDialog();
-//        }
     }
 
     public void start() {
-        Task<Channel> task = new Task<Channel>() {
+        Task<Channel> task = new Task<>() {
             @Override
             protected Channel call() throws Exception {
 
@@ -105,14 +98,9 @@ public class Controller implements Initializable {
                                         new ByteArrayEncoder(),
                                         new JsonDecoder(),
                                         new JsonEncoder(),
-//                                        new LogOUTbandHandler(),
-//                                        new ObjectEncoder(), //Кодировщик, который сериализует объект Java в файл ByteBuf.
-//                                        new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null)), // Декодировщик с максимальной размером обьекта
                                         new ClientHandler());
                             }
                         });
-                //временное сообщение для меня
-                System.out.println("Client started");
 
                 ChannelFuture channelFuture = bootstrap.connect("localhost", 9000);
                 channel = channelFuture.channel();
@@ -127,8 +115,6 @@ public class Controller implements Initializable {
 
             @Override
             protected void succeeded() {
-                //временное сообщение для меня
-                System.out.println("succeeded в старте сработал");
 
                 channel = getValue();
                 connected.set(true);
@@ -137,8 +123,6 @@ public class Controller implements Initializable {
             @Override
             protected void failed() {
                 connected.set(false);
-                //временное сообщение для меня
-                System.out.println("failed сработал");
             }
         };
         lblStatus.textProperty().bind(task.messageProperty());
@@ -148,12 +132,10 @@ public class Controller implements Initializable {
 
     public void sendAuth() {
         // нажатие кнопки для авторизации
-        System.out.println("пошла sendAuth");//временно
-//        start();
         if (!connected.get())
             return;
 
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
                 ChannelFuture f = channel.writeAndFlush(new AuthMessage(loginField.getText(), passField.getText()));
@@ -173,15 +155,12 @@ public class Controller implements Initializable {
                 System.out.println("failed сработал");
             }
         };
-//        lblStatus.textProperty().bind(task.messageProperty());
-//        piStatus.progressProperty().bind(task.progressProperty());
         new Thread(task).start();
     }
 
     public void setAuthorized(String clientLogin) {
         authorized = true;
         login = clientLogin;
-        System.out.println("Авторизация - " + authorized.toString()); //Авторизация - true/false
         Platform.runLater(() -> {
             authPanel.setVisible(false);
             workedplace.setVisible(true);
@@ -206,23 +185,21 @@ public class Controller implements Initializable {
             //столбец размер файла
             TableColumn<FileInfo, Long> fileSizeColumn = new TableColumn<>("Размер");
             fileSizeColumn.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getSize()));
-            fileSizeColumn.setCellFactory(column -> {
-                return new TableCell<FileInfo, Long>() {
-                    @Override
-                    protected void updateItem(Long item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setStyle("");
-                        } else {
-                            String text = String.format("%,d bytes", item);
-                            if (item == -1L) {
-                                text = "[DIR]";
-                            }
-                            setText(text);
+            fileSizeColumn.setCellFactory(column -> new TableCell<>() {
+                @Override
+                protected void updateItem(Long item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        String text = String.format("%,d bytes", item);
+                        if (item == -1L) {
+                            text = "[DIR]";
                         }
+                        setText(text);
                     }
-                };
+                }
             });
             fileSizeColumn.setPrefWidth(120);
 
@@ -239,14 +216,11 @@ public class Controller implements Initializable {
             //патч папки с файлами
             updateListWindow(Paths.get(defaultPath + login));
 
-            filesTable.setOnMouseClicked(new EventHandler<MouseEvent>() {
-                @Override
-                public void handle(MouseEvent mouseEvent) {
-                    if (mouseEvent.getClickCount() == 2){
-                        Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
-                        if (Files.isDirectory(path)) {
-                            updateListWindow(path);
-                        }
+            filesTable.setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() == 2){
+                    Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
+                    if (Files.isDirectory(path)) {
+                        updateListWindow(path);
                     }
                 }
             });
@@ -256,43 +230,6 @@ public class Controller implements Initializable {
 
     public void updatingTheClientFileList() {
         fileList = updateList(Paths.get(defaultPath + login));
-        System.out.println("Количество записей в Листе - " + fileList.size());
-//            int subFolders = 0;
-//        List<java.commons.FileInfo> subf = new ArrayList<>();
-//        for (java.commons.FileInfo x : fileList) {
-//            if (x.getType() == java.commons.FileInfo.FileType.DIRECTORY) {
-//                List<java.commons.FileInfo> buff;
-//                try {
-//                    buff = Files.list(Paths.get("C:\\Cloud\\Client" + "\\" + x.getFilename())).map(java.commons.FileInfo::new).collect(Collectors.toList());
-//                    System.out.println(buff.size());
-//                    subf.addAll(buff);
-//                    buff.clear();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        fileList.addAll(subf);
-//        subf = null;
-//            List subFoldersList = new ArrayList();
-//            System.out.println(subFolders);
-//            for (int i = 0; i < subFolders; i++) {
-//                subFoldersList.add(i, new ArrayList<java.commons.FileInfo>());
-//            }
-        // кусок кода на кнопку (заносим в лист файлы подпапок)
-//            fileList.stream()
-//                    .filter(x -> x.getType() == java.commons.FileInfo.FileType.DIRECTORY)
-//                    .forEach(x -> updateSubFolders(fileList, Paths.get("C:\\Cloud\\Client"), x));
-//        List<java.commons.FileInfo> filetest = new ArrayList<>();
-//        filetest = updateList(filetest,Paths.get("C:\\Cloud\\Client"));
-//        System.out.println(filetest.size());
-
-        //Временная проверка наполнения  списка файлов
-        for (FileInfo x : fileList) {
-            System.out.println(x.getFilename());
-            System.out.println(x.getPathFile());
-        }
-//        System.out.println("Количество записей в Листе - " + fileList.size());
     }
 
     private List<FileInfo> updateList(Path path) {
@@ -321,23 +258,6 @@ public class Controller implements Initializable {
             alert.showAndWait();
         }
     }
-
-//    private void updateList(Path path){
-//        try {
-//            fileList = Files.list(path).map(java.commons.FileInfo::new).collect(Collectors.toList());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    private void updateSubFolders(List<java.commons.FileInfo> fileList, Path path, java.commons.FileInfo fileInfo) {
-//        try {
-//            String pathsubfolder = path + "\\" + fileInfo.getFilename();
-//        Files.list(Path.of(pathsubfolder)).map(java.commons.FileInfo::new).forEach(fileList::add);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     public void setAlertmsg(String alertmsg) {
         Platform.runLater(() -> {
@@ -368,13 +288,13 @@ public class Controller implements Initializable {
 
     public void syncronizedClientFromServer() {
         System.out.println("запуск syncronizedClientFromServer");
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
 
             @Override
             protected Void call() {
                 fileList = updateList(Paths.get(defaultPath + login));
                 updateListWindow(Paths.get(defaultPath + login));
-                ChannelFuture f = channel.writeAndFlush(new SyncronizedClientFromServer(fileList));
+                channel.writeAndFlush(new SyncronizedClientFromServer(fileList));
                 return null;
             }
 
@@ -393,47 +313,13 @@ public class Controller implements Initializable {
     }
 
     public void copyFileToServer() {
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
 
             @Override
-            protected Void call() throws Exception {
-//                System.out.println("Кнопка - копировать на сервер");//временно
-//                List<FileMessage> fileMessage = new ArrayList<>();
-//                for (int i = 0; i < fileList.size(); i++) {
-//                    fileMessage.add(new FileMessage());
-//                }
-                for (FileInfo fl: fileList){
+            protected Void call() {
+                for (FileInfo fl : fileList) {
                     readAndUploadFile(fl);
                 }
-//                FileInfo fileInfo = new FileInfo(Paths.get("C:\\Cloud\\Client\\openjdk-8u41-b04-windows-i586-14_jan_2020.zip"));
-
-//                randomAccessFile = new RandomAccessFile(fileMessage.getFile(), "r"); //  r- read - копирую на сервер
-//                long lenght = fileMessage.getFile().length();
-//                long pointer = randomAccessFile.getFilePointer();
-//                long available = lenght - pointer;
-//                while (available > 0) {
-//                    byte[] bytes;
-//                    if (available > BUFFER_SIZE) {
-//                        bytes = new byte[BUFFER_SIZE];
-//                    } else {
-//                        bytes = new byte[((int) available)];
-//                    }
-//                    randomAccessFile.read(bytes);
-//                    FileMessage fileMessage1 = new FileMessage();
-//                    fileMessage1.setFile_md5(fileMessage.getFile_md5());
-//                    fileMessage1.setStarPos(pointer);
-//                    fileMessage1.setBytes(bytes);
-//                    while (true) {
-//                        if (channel.isWritable()) {
-//                            channel.writeAndFlush(fileMessage1);
-//                            break;
-//                        } else {
-//                            Thread.sleep(10);
-//                        }
-//                    }
-//                    pointer = randomAccessFile.getFilePointer();
-//                    available = lenght - pointer;
-//                }
                 return null;
             }
         };
@@ -442,9 +328,7 @@ public class Controller implements Initializable {
 
     private void readAndUploadFile(FileInfo fileInfo) {
         if (fileInfo.getType() == FileInfo.FileType.DIRECTORY || fileInfo.getSize()==0){
-            System.out.println("Директория или пустой файл");
             FileMessage fileMessage = new FileMessage(fileInfo);
-            System.out.println(fileMessage.toString());
             channel.writeAndFlush(fileMessage);
         } else {
             try (RandomAccessFile randomAccessFile = new RandomAccessFile(Paths.get(fileInfo.getPathFile()).toFile(), "r")) { //  r- read - копирую на сервер
@@ -475,12 +359,12 @@ public class Controller implements Initializable {
 
                 }
             } catch (IOException | InterruptedException e) {
-                System.out.println("Ошибка при записи файла - " + e);;
+                System.out.println("Ошибка при записи файла - " + e);
             }
         }
     }
 
-    public void btnUP(ActionEvent actionEvent){
+    public void btnUP(){
         Path upperPath = Paths.get(pathField.getText()).getParent();
         if (upperPath != null){
             updateListWindow(upperPath);
@@ -489,7 +373,7 @@ public class Controller implements Initializable {
 
     @FXML
     private void copyFileToClient() {
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
 
             @Override
             protected Void call() {
@@ -499,68 +383,4 @@ public class Controller implements Initializable {
         };
         new Thread(task).start();
     }
-
-//    public void authDialog(){
-//        // Create the custom dialog.
-//        Dialog<Pair<String, String>> dialog = new Dialog<>();
-//        dialog.setTitle("Авторизация");
-//        dialog.setHeaderText("Пожалуйста, введите логин и пароль");
-//
-//// Set the icon (must be included in the project).
-////        dialog.setGraphic(new ImageView(this.getClass().getResource("login.png").toString()));
-//
-//// Set the button types.
-//        ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
-//        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
-//
-//// Create the username and password labels and fields.
-//        GridPane grid = new GridPane();
-//        grid.setHgap(10);
-//        grid.setVgap(10);
-//        grid.setPadding(new Insets(20, 150, 10, 10));
-//
-//        TextField username = new TextField();
-//        username.setPromptText("Username");
-//        PasswordField password = new PasswordField();
-//        password.setPromptText("Password");
-//
-//        grid.add(new Label("Username:"), 0, 0);
-//        grid.add(username, 1, 0);
-//        grid.add(new Label("Password:"), 0, 1);
-//        grid.add(password, 1, 1);
-//
-//// Enable/Disable login button depending on whether a username was entered.
-//        Node loginButton = dialog.getDialogPane().lookupButton(loginButtonType);
-//        loginButton.setDisable(true);
-//
-//// Do some validation (using the Java 8 lambda syntax).
-//        username.textProperty().addListener((observable, oldValue, newValue) -> {
-//            loginButton.setDisable(newValue.trim().isEmpty());
-//        });
-//
-//        dialog.getDialogPane().setContent(grid);
-//
-//// Request focus on the username field by default.
-//        Platform.runLater(() -> username.requestFocus());
-//
-//// Convert the result to a username-password-pair when the login button is clicked.
-//        dialog.setResultConverter(dialogButton -> {
-//            if (dialogButton == loginButtonType) {
-//                return new Pair<>(username.getText(), password.getText());
-//            }
-//            return null;
-//        });
-//
-//        Optional<Pair<String, String>> result = dialog.showAndWait();
-//
-//        result.ifPresent(usernamePassword -> System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue()));
-//        Task<Void> task = new Task<Void>() {
-//            @Override
-//            protected Void call() {
-//                result.ifPresent(usernamePassword -> channel.writeAndFlush(new AuthMessage(usernamePassword.getKey(), usernamePassword.getValue())));
-//                return null;
-//            }
-//    };
-//        new Thread(task).start();
-//}
 }

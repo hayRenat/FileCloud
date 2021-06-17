@@ -14,11 +14,11 @@ public class JsonDecoder extends MessageToMessageDecoder<byte[]> {
     @Override
     protected void decode(ChannelHandlerContext channelHandlerContext, byte[] bytes, List<Object> list){
         try {
-            Message message = null;
+            Message message;
             message = OBJECT_MAPPER.readValue(bytes, Message.class);
             list.add(message);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println("Ошибка JsonDecoder - " + e);
         }
 
     }

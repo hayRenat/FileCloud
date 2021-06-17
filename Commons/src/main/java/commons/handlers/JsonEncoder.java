@@ -17,9 +17,8 @@ public class JsonEncoder extends MessageToMessageEncoder<Message> {
         try {
             bytes = OBJECT_MAPPER.writeValueAsBytes(message);
         } catch (JsonProcessingException e) {
-            System.out.println("Ошибка ENCODER - " + e);;
+            System.out.println("Ошибка JsonEncoder - " + e);
         }
         list.add(bytes);
-        System.out.println("Кодирование завершенно"); // временно
     }
 }

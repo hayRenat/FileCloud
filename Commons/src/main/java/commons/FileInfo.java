@@ -8,7 +8,7 @@ public class FileInfo extends Message {
     public enum FileType {
         FILE("FILE"), DIRECTORY("DIR");
 
-        private String name;
+        private final String name;
 
         public String getName() {
             return name;
@@ -34,32 +34,16 @@ public class FileInfo extends Message {
         return filename;
     }
 
-    public void setFilename(String filename) {
-        this.filename = filename;
-    }
-
     public FileType getType() {
         return type;
-    }
-
-    public void setType(FileType type) {
-        this.type = type;
     }
 
     public long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
-        this.size = size;
-    }
-
     public long getLastModified() {
         return lastModified;
-    }
-
-    public void setLastModified(long lastModified) {
-        this.lastModified = lastModified;
     }
 
     public FileInfo(Path path) {
@@ -78,12 +62,5 @@ public class FileInfo extends Message {
     }
 
     public FileInfo() {
-    }
-
-    public FileInfo(String filename, long size, long lastModified, String pathFile) {
-        this.filename = filename;
-        this.size = size;
-        this.lastModified = lastModified;
-        this.pathFile = pathFile;
     }
 }

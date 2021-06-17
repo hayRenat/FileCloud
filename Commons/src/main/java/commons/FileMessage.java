@@ -1,7 +1,6 @@
 package commons;
 
 import java.io.File;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 
 //класс для передачи закачки файла в хендлере
@@ -18,25 +17,6 @@ public class FileMessage extends Message{
     private FileInfo.FileType fileType; // тип файла (папка/файл)
     private long lastModifed; //время изменения файла
 
-    public File getFile() {
-        return file;
-    }
-
-    public void setFile(File file) {
-        this.file = file;
-    }
-
-    public String getFileName() {
-        return fileName;
-    }
-
-    public void setFileName(String fileName) {
-        this.fileName = this.fileName;
-    }
-
-    public long getStarPos() {
-        return starPos;
-    }
 
     public FileInfo.FileType getFileType() {
         return fileType;
@@ -44,6 +24,10 @@ public class FileMessage extends Message{
 
     public void setStarPos(long starPos) {
         this.starPos = starPos;
+    }
+
+    public long getStarPos() {
+        return starPos;
     }
 
     public byte[] getBytes() {
@@ -58,9 +42,6 @@ public class FileMessage extends Message{
         return endPos;
     }
 
-    public void setEndPos(long endPos) {
-        this.endPos = endPos;
-    }
 
     public String getPath() {
         return path;
@@ -70,16 +51,7 @@ public class FileMessage extends Message{
         return lastModifed;
     }
 
-    public static long getSerialversionuid() {
-        return serialVersionUID;
-    }
 
-    public FileMessage(Path path) {
-        this.file = path.toFile();
-        this.fileName = path.getFileName().toString();
-        this.starPos = 0;
-        this.endPos = path.toFile().length();
-    }
 
     public FileMessage() {
     }
