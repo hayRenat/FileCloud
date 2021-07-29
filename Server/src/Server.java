@@ -26,9 +26,9 @@ public class Server {
                     .group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
                     .option(ChannelOption.SO_BACKLOG, 1024)
-                    .childHandler(new ChannelInitializer<Channel>() {
+                    .childHandler(new ChannelInitializer() {
                         @Override
-                        protected void initChannel(Channel channel) throws Exception {
+                        protected void initChannel(Channel channel) {
                             channel.pipeline().addLast(
 //                                    new ObjectEncoder(), //Кодировщик, который сериализует объект Java в файл ByteBuf.
 //                                    new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null)), // Декодировщик с максимальной размером обьекта
