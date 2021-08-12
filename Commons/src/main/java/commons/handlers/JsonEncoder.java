@@ -1,5 +1,6 @@
 package commons.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import commons.Message;
 import io.netty.channel.ChannelHandlerContext;
@@ -11,8 +12,13 @@ public class JsonEncoder extends MessageToMessageEncoder<Message> {
     private final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Message message, List<Object> list) throws Exception {
-        byte[] bytes = OBJECT_MAPPER.writeValueAsBytes(message);
+    protected void encode(ChannelHandlerContext channelHandlerContext, Message message, List<Object> list) {
+        byte[] bytes = new byte[0];
+        try {
+            bytes = OBJECT_MAPPER.writeValueAsBytes(message);
+        } catch (JsonProcessingException e) {
+            System.out.println("Ошибка JsonEncoder - " + e);
+        }
         list.add(bytes);
     }
 }

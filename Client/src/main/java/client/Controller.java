@@ -4,10 +4,7 @@ import commons.*;
 import commons.handlers.JsonDecoder;
 import commons.handlers.JsonEncoder;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -27,28 +24,38 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.format.DateTimeFormatter;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.stream.Collectors;
+import java.lang.*;
 
 public class Controller implements Initializable {
 
+    private final static int BUFFER_SIZE = 1024 * 512;
     private Channel channel;
-    private BooleanProperty connected = new SimpleBooleanProperty(false);
+    private final BooleanProperty connected = new SimpleBooleanProperty(false);
     private Boolean authorized;
     private List<FileInfo> fileList;
+    private String login;
+    private final String defaultPath = "C:\\Cloud\\Client\\";
+
+    public String getDefaultPath() {
+        return defaultPath;
+    }
 
     public List<FileInfo> getFileList() {
         return fileList;
     }
 
     @FXML
-    TextField loginField;
+    TextField loginField, pathField;
     @FXML
     HBox authPanel, workedplace;
     @FXML
@@ -61,7 +68,6 @@ public class Controller implements Initializable {
     TableView<FileInfo> filesTable;
 
 
-
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         authorized = false;
@@ -69,7 +75,7 @@ public class Controller implements Initializable {
     }
 
     public void start() {
-        Task<Channel> task = new Task<Channel>() {
+        Task<Channel> task = new Task<>() {
             @Override
             protected Channel call() throws Exception {
 
@@ -82,6 +88,7 @@ public class Controller implements Initializable {
                         .group(group)
                         .channel(NioSocketChannel.class)
                         .option(ChannelOption.SO_KEEPALIVE, true)
+                        .option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024 * 5, 1024 * 1024 * 10))
                         .handler(new ChannelInitializer<SocketChannel>() {
                             @Override
                             protected void initChannel(SocketChannel ch) {
@@ -92,13 +99,9 @@ public class Controller implements Initializable {
                                         new ByteArrayEncoder(),
                                         new JsonDecoder(),
                                         new JsonEncoder(),
-//                                        new ObjectEncoder(), //Кодировщик, который сериализует объект Java в файл ByteBuf.
-//                                        new ObjectDecoder(Integer.MAX_VALUE, ClassResolvers.weakCachingConcurrentResolver(null)), // Декодировщик с максимальной размером обьекта
                                         new ClientHandler());
                             }
                         });
-                //временное сообщение для меня
-                System.out.println("Client started");
 
                 ChannelFuture channelFuture = bootstrap.connect("localhost", 9000);
                 channel = channelFuture.channel();
@@ -113,8 +116,6 @@ public class Controller implements Initializable {
 
             @Override
             protected void succeeded() {
-                //временное сообщение для меня
-                System.out.println("succeeded в старте сработал");
 
                 channel = getValue();
                 connected.set(true);
@@ -123,8 +124,6 @@ public class Controller implements Initializable {
             @Override
             protected void failed() {
                 connected.set(false);
-                //временное сообщение для меня
-                System.out.println("failed сработал");
             }
         };
         lblStatus.textProperty().bind(task.messageProperty());
@@ -134,20 +133,20 @@ public class Controller implements Initializable {
 
     public void sendAuth() {
         // нажатие кнопки для авторизации
-        System.out.println("пошла sendAuth");//временно
-//        start();
         if (!connected.get())
             return;
 
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
             @Override
             protected Void call() throws Exception {
-                channel.writeAndFlush(new AuthMessage(loginField.getText(),passField.getText()));
+                ChannelFuture f = channel.writeAndFlush(new AuthMessage(loginField.getText(), passField.getText()));
+                f.sync();
                 System.out.println(channel);
                 return null;
             }
+
             @Override // временная попытка
-            protected void succeeded(){
+            protected void succeeded() {
                 System.out.println("Succeeded в аутентификации");
             }
 
@@ -157,15 +156,13 @@ public class Controller implements Initializable {
                 System.out.println("failed сработал");
             }
         };
-        lblStatus.textProperty().bind(task.messageProperty());
-        piStatus.progressProperty().bind(task.progressProperty());
         new Thread(task).start();
     }
 
-    public void setAuthorized() {
+    public void setAuthorized(String clientLogin) {
         authorized = true;
-        System.out.println("Авторизация - " + authorized.toString());
-        Platform.runLater(()->{
+        login = clientLogin;
+        Platform.runLater(() -> {
             authPanel.setVisible(false);
             workedplace.setVisible(true);
             filesTable.setVisible(true);
@@ -189,30 +186,28 @@ public class Controller implements Initializable {
             //столбец размер файла
             TableColumn<FileInfo, Long> fileSizeColumn = new TableColumn<>("Размер");
             fileSizeColumn.setCellValueFactory(param -> new SimpleObjectProperty<>(param.getValue().getSize()));
-            fileSizeColumn.setCellFactory(column -> {
-                return new TableCell<FileInfo, Long>() {
-                    @Override
-                    protected void updateItem(Long item, boolean empty) {
-                        super.updateItem(item, empty);
-                        if (item == null || empty) {
-                            setText(null);
-                            setStyle("");
-                        } else {
-                            String text = String.format("%,d bytes", item);
-                            if (item == -1L) {
-                                text = "[DIR]";
-                            }
-                            setText(text);
+            fileSizeColumn.setCellFactory(column -> new TableCell<>() {
+                @Override
+                protected void updateItem(Long item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (item == null || empty) {
+                        setText(null);
+                        setStyle("");
+                    } else {
+                        String text = String.format("%,d bytes", item);
+                        if (item == -1L) {
+                            text = "[DIR]";
                         }
+                        setText(text);
                     }
-                };
+                }
             });
             fileSizeColumn.setPrefWidth(120);
 
             //столбец Дата изменения
-            DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            SimpleDateFormat dtf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             TableColumn<FileInfo, String> fileDateColumn = new TableColumn<>("Дата изменения");
-            fileDateColumn.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().getLastModified().format(dtf)));
+            fileDateColumn.setCellValueFactory(param -> new SimpleStringProperty(dtf.format(param.getValue().getLastModified())));
             fileDateColumn.setPrefWidth(120);
 
             //добаляем столбцы в таблицу
@@ -220,52 +215,25 @@ public class Controller implements Initializable {
             //сортировка по типу файла (папка/файл)
             filesTable.getSortOrder().add(fileTypeColumn);
             //патч папки с файлами
-            updateListWindow(Paths.get("C:\\Cloud\\Client"));
+            updateListWindow(Paths.get(defaultPath + login));
+
+            filesTable.setOnMouseClicked(mouseEvent -> {
+                if (mouseEvent.getClickCount() == 2){
+                    Path path = Paths.get(pathField.getText()).resolve(filesTable.getSelectionModel().getSelectedItem().getFilename());
+                    if (Files.isDirectory(path)) {
+                        updateListWindow(path);
+                    }
+                }
+            });
+
         } else System.out.println("Не удалось поменять рабочий стол");
     }
 
     public void updatingTheClientFileList() {
-        fileList = updateList(Paths.get("C:\\Cloud\\Client\\"));
-        System.out.println("Количество записей в Листе - " + fileList.size());
-//            int subFolders = 0;
-//        List<java.commons.FileInfo> subf = new ArrayList<>();
-//        for (java.commons.FileInfo x : fileList) {
-//            if (x.getType() == java.commons.FileInfo.FileType.DIRECTORY) {
-//                List<java.commons.FileInfo> buff;
-//                try {
-//                    buff = Files.list(Paths.get("C:\\Cloud\\Client" + "\\" + x.getFilename())).map(java.commons.FileInfo::new).collect(Collectors.toList());
-//                    System.out.println(buff.size());
-//                    subf.addAll(buff);
-//                    buff.clear();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//        fileList.addAll(subf);
-//        subf = null;
-//            List subFoldersList = new ArrayList();
-//            System.out.println(subFolders);
-//            for (int i = 0; i < subFolders; i++) {
-//                subFoldersList.add(i, new ArrayList<java.commons.FileInfo>());
-//            }
-        // кусок кода на кнопку (заносим в лист файлы подпапок)
-//            fileList.stream()
-//                    .filter(x -> x.getType() == java.commons.FileInfo.FileType.DIRECTORY)
-//                    .forEach(x -> updateSubFolders(fileList, Paths.get("C:\\Cloud\\Client"), x));
-//        List<java.commons.FileInfo> filetest = new ArrayList<>();
-//        filetest = updateList(filetest,Paths.get("C:\\Cloud\\Client"));
-//        System.out.println(filetest.size());
-
-        //Временная проверка наполнения  списка файлов
-        for (FileInfo x : fileList) {
-            System.out.println(x.getFilename());
-            System.out.println(x.getPathFile());
-        }
-//        System.out.println("Количество записей в Листе - " + fileList.size());
+        fileList = updateList(Paths.get(defaultPath + login));
     }
 
-    private List<FileInfo> updateList(Path path){
+    private List<FileInfo> updateList(Path path) {
         //Обновление списка файлов на Клиенте
         List<FileInfo> list = null;
         try {
@@ -281,6 +249,7 @@ public class Controller implements Initializable {
     private void updateListWindow(Path path) {
         //обновление таблицы файлов UI
         try {
+            pathField.setText(path.normalize().toAbsolutePath().toString());
             filesTable.getItems().clear();
             filesTable.getItems().addAll(Files.list(path).map(FileInfo::new).collect(Collectors.toList()));
             filesTable.sort();
@@ -291,42 +260,47 @@ public class Controller implements Initializable {
         }
     }
 
-//    private void updateList(Path path){
-//        try {
-//            fileList = Files.list(path).map(java.commons.FileInfo::new).collect(Collectors.toList());
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    private void updateSubFolders(List<java.commons.FileInfo> fileList, Path path, java.commons.FileInfo fileInfo) {
-//        try {
-//            String pathsubfolder = path + "\\" + fileInfo.getFilename();
-//        Files.list(Path.of(pathsubfolder)).map(java.commons.FileInfo::new).forEach(fileList::add);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-
     public void setAlertmsg(String alertmsg) {
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.ERROR, alertmsg, ButtonType.OK);
             alert.showAndWait();
         });
     }
 
-    public void syncronizedClientFromServer(){
+    public void setSyncDialog(String infomsg){
+        Platform.runLater(()->{
+            System.out.println("setSyncDialog");
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            ButtonType buttonTypeCopy = new ButtonType("Копировать на сервер");
+            ButtonType buttonTypeDownload = new ButtonType("Копировать с сервера");
+            ButtonType buttonTypeCancel = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
+            alert.getButtonTypes().setAll(buttonTypeCopy, buttonTypeDownload, buttonTypeCancel);
+            alert.setTitle("Пожалуйста, выберите действие");
+            alert.setHeaderText("Ниже приведена информация о различиях...");
+            alert.setContentText(infomsg);
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == buttonTypeCopy){
+                copyFileToServer();
+            }else if (result.get() == buttonTypeDownload){
+                copyFileToClient();
+            }
+        });
+    }
+
+    public void syncronizedClientFromServer() {
         System.out.println("запуск syncronizedClientFromServer");
-        Task<Void> task = new Task<Void>() {
+        Task<Void> task = new Task<>() {
 
             @Override
-            protected Void call() throws Exception {
+            protected Void call() {
+                fileList = updateList(Paths.get(defaultPath + login));
+                updateListWindow(Paths.get(defaultPath + login));
                 channel.writeAndFlush(new SyncronizedClientFromServer(fileList));
-                System.out.println(channel.read());
                 return null;
             }
+
             @Override // временная попытка
-            protected void succeeded(){
+            protected void succeeded() {
                 System.out.println("Succeeded syncronizedClientFromServer");
             }
 
@@ -334,6 +308,78 @@ public class Controller implements Initializable {
             protected void failed() {
                 connected.set(false);
                 System.out.println("failed syncronizedClientFromServer");
+            }
+        };
+        new Thread(task).start();
+    }
+
+    public void copyFileToServer() {
+        Task<Void> task = new Task<>() {
+
+            @Override
+            protected Void call() {
+                for (FileInfo fl : fileList) {
+                    readAndUploadFile(fl);
+                }
+                return null;
+            }
+        };
+        new Thread(task).start();
+    }
+
+    private void readAndUploadFile(FileInfo fileInfo) {
+        if (fileInfo.getType() == FileInfo.FileType.DIRECTORY || fileInfo.getSize()==0){
+            FileMessage fileMessage = new FileMessage(fileInfo);
+            channel.writeAndFlush(fileMessage);
+        } else {
+            try (RandomAccessFile randomAccessFile = new RandomAccessFile(Paths.get(fileInfo.getPathFile()).toFile(), "r")) { //  r- read - копирую на сервер
+                long lenght = fileInfo.getSize();
+                long pointer = randomAccessFile.getFilePointer();
+                long available = lenght - pointer;
+                while (available > 0) {
+                    byte[] bytes;
+                    if (available > BUFFER_SIZE) {
+                        bytes = new byte[BUFFER_SIZE];
+                    } else {
+                        bytes = new byte[((int) available)];
+                    }
+                    randomAccessFile.read(bytes);
+                    FileMessage fileMessage = new FileMessage(fileInfo);
+                    fileMessage.setStarPos(pointer);
+                    fileMessage.setBytes(bytes);
+                    while (true) {
+                        if (channel.isWritable()) {
+                            channel.writeAndFlush(fileMessage);
+                            break;
+                        } else {
+                            Thread.sleep(10);
+                        }
+                    }
+                    pointer = randomAccessFile.getFilePointer();
+                    available = lenght - pointer;
+
+                }
+            } catch (IOException | InterruptedException e) {
+                System.out.println("Ошибка при записи файла - " + e);
+            }
+        }
+    }
+
+    public void btnUP(){
+        Path upperPath = Paths.get(pathField.getText()).getParent();
+        if (upperPath != null){
+            updateListWindow(upperPath);
+        }
+    }
+
+    @FXML
+    private void copyFileToClient() {
+        Task<Void> task = new Task<>() {
+
+            @Override
+            protected Void call() {
+                channel.writeAndFlush(new DownloadFileMessage());
+                return null;
             }
         };
         new Thread(task).start();
