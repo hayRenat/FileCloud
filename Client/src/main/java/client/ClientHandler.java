@@ -1,9 +1,6 @@
 package client;
 
-import commons.AuthMessage;
-import commons.FileInfo;
-import commons.FileMessage;
-import commons.SyncronizedClientFromServer;
+import commons.*;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.util.ReferenceCountUtil;
@@ -13,15 +10,15 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.List;
 
-public class ClientHandler extends SimpleChannelInboundHandler {
+public class ClientHandler extends SimpleChannelInboundHandler<Message> {
 
 
     @Override
-    public void channelRead0(ChannelHandlerContext ctx, Object msg){
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) {
         System.out.println("Сработал ClientHandler");
         System.out.println("Принял это сообщение - " + msg);
-        if (msg instanceof AuthMessage){
-            if (((AuthMessage) msg).getAutorized()){
+        if (msg instanceof AuthMessage) {
+            if (((AuthMessage) msg).getAutorized()) {
                 Main.controller.setAuthorized(((AuthMessage) msg).getLogin());
                 Main.controller.updatingTheClientFileList();
                 System.out.println(msg);
@@ -32,24 +29,25 @@ public class ClientHandler extends SimpleChannelInboundHandler {
                 ReferenceCountUtil.release(msg);
             }
         }
-        if (msg instanceof SyncronizedClientFromServer){
+        if (msg instanceof SyncronizedClientFromServer) {
             List<FileInfo> serverList = ((SyncronizedClientFromServer) msg).getFileInfoList();
             List<FileInfo> clientList = Main.controller.getFileList();
             String result = "Файлов на сервере - " + serverList.size() + "\n" + "Файлов на клиенте - " + clientList.size() + "\n";
             Main.controller.setSyncDialog(result);
         }
-        if (msg instanceof FileMessage){
+        if (msg instanceof FileMessage) {
             FileMessage fileMessage = (FileMessage) msg;
             readAndWriteFile(fileMessage);
         }
     }
-    private void readAndWriteFile (FileMessage fileMessage) {
+
+    private void readAndWriteFile(FileMessage fileMessage) {
         String defaultPath = Main.controller.getDefaultPath();
         File file = new File(defaultPath + fileMessage.getPath());
         if (fileMessage.getFileType() == FileInfo.FileType.DIRECTORY) {
             file.mkdir();
         }
-        if (fileMessage.getEndPos() == 0) {
+        else if (fileMessage.getEndPos() == 0) {
             try {
                 file.createNewFile();
             } catch (IOException e) {

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 public class ServerHandler extends SimpleChannelInboundHandler<Message> {
 
-    private final String defaultPath = "C:\\Cloud\\Server\\";
+    private String defaultPath = "C:\\Cloud\\Server\\";
     private final String clientLogin;
     private final static int BUFFER_SIZE = 1024 * 512;
 
@@ -62,24 +62,24 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
         File file = new File(defaultPath + fileMessage.getPath());
         if (fileMessage.getFileType() == FileInfo.FileType.DIRECTORY) {
             file.mkdir();
-        }
-        if (fileMessage.getEndPos() == 0) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                System.out.println("Ошибка при создании пустого файла - " + e);
-            }
-        } else {
-            try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) { //rw - читает и записывает - качаю на сервер
-            byte[] bytes = fileMessage.getBytes();
-            randomAccessFile.seek(fileMessage.getStarPos());
-            randomAccessFile.write(bytes);
+        } else if (fileMessage.getEndPos() == 0) {
+                try {
+                    file.createNewFile();
                 } catch (IOException e) {
-                System.out.println("Ошибка при загрузке файла на сервер - " + e);
+                    System.out.println("Ошибка при создании пустого файла - " + e);
+                }
+            } else {
+                try (RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw")) { //rw - читает и записывает - качаю на сервер
+                    byte[] bytes = fileMessage.getBytes();
+                    randomAccessFile.seek(fileMessage.getStarPos());
+                    randomAccessFile.write(bytes);
+                } catch (IOException e) {
+                    System.out.println("Ошибка при загрузке файла на сервер - " + e);
+                }
             }
+            System.out.println("Загрузка файла завершена");
         }
-        System.out.println("Загрузка файла завершена");
-    }
+
     private List<FileInfo> updateClientListFromServer(Path path) {
         //Обновление списка файлов пользователя на сервере
         List<FileInfo> list = new ArrayList<>();
@@ -119,7 +119,6 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                     while (true) {
                         if (ctx.channel().isWritable()) {
                             ctx.writeAndFlush(fileMessage);
-                            System.out.println(ctx.channel().isWritable());
                             break;
                         } else {
                             Thread.sleep(10);
@@ -134,5 +133,13 @@ public class ServerHandler extends SimpleChannelInboundHandler<Message> {
                 System.out.println("Ошибка при записи файла - " + e);
             }
         }
+    }
+
+    public void setDefaultPath(String defaultPath) {
+        this.defaultPath = defaultPath;
+    }
+
+    public String getClientLogin() {
+        return clientLogin;
     }
 }

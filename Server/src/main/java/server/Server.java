@@ -5,6 +5,7 @@ import commons.handlers.JsonEncoder;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
@@ -33,9 +34,9 @@ public class Server {
                     .option(ChannelOption.SO_BACKLOG, 1024)
                     .childOption(ChannelOption.SO_KEEPALIVE, true)
                     .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(1024 * 1024 * 5, 1024 * 1024 * 10))
-                    .childHandler(new ChannelInitializer() {
+                    .childHandler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        protected void initChannel(Channel channel) {
+                        protected void initChannel(SocketChannel channel) {
                             channel.pipeline().addLast(
                                     new LengthFieldBasedFrameDecoder(1024 * 1024, 0, 4, 0, 4),
                                     new LengthFieldPrepender(4),
@@ -52,6 +53,7 @@ public class Server {
         } finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
+            SQLHandler.disconnect();
         }
     }
 }

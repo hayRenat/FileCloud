@@ -63,4 +63,8 @@ public class FileInfo extends Message {
 
     public FileInfo() {
     }
+
+    public void setPathFile(String pathFile) {
+        this.pathFile = pathFile;
+    }
 }

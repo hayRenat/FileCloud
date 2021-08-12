@@ -70,4 +70,8 @@ public class FileMessage extends Message{
         String userPathToFile = userPath[3];
         return userPathToFile;
     }
+
+    public void setPath(String path) {
+        this.path = path;
+    }
 }

@@ -14,8 +14,20 @@
             <artifactId>h2</artifactId>
             <version>1.4.200</version>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>hayRenat</groupId>
+            <artifactId>Client</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
 
+    </dependencies>
     <parent>
         <groupId>hayRenat</groupId>
         <artifactId>FileCloud</artifactId>
